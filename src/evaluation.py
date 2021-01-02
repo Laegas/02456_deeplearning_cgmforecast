@@ -14,6 +14,7 @@ from plotly.subplots import make_subplots
 from torch import nn
 
 from src.ClarkeErrorGrid.ClarkeErrorGrid import clarke_error_grid
+from src.ParkesErrorGrid.ParkesErrorGrid import parkes_error_grid
 from src.data import DataframeDataLoader
 from src.tools import crosscorr, predict_cgm
 
@@ -107,7 +108,7 @@ class evaluateModel:
         plotPredictionTimeseries(_pred, _target, figure_path)
 
 
-    def clarkesErrorGrid(self, unit, figure_path = None, dataType = 'test'):
+    def apply_clarke_error_grid(self, unit, figure_path = None, dataType = 'test'):
 
         # Determine which part of the data object that should be used
         if dataType == 'test':
@@ -127,7 +128,25 @@ class evaluateModel:
 
         return zones, zones_prob
 
+    def apply_parkes_error_grid(self, unit, figure_path=None, dataType='test') -> Tuple[dict, dict]:
 
+        # Determine which part of the data object that should be used
+        if dataType == 'test':
+            _pred = self.test_predictions_absolute
+            _target = self.test_df['target']
+
+        elif dataType == 'train':
+            pass
+        elif dataType == 'validation':
+            pass
+
+        figure, zones, zones_prob = parkes_error_grid(np.array(_target), np.array(_pred), '', unit)
+
+        if figure_path is not None:
+            figure.savefig(figure_path / 'parkes.png')
+            figure.savefig(figure_path / 'parkes.pdf', format='pdf')
+
+        return zones, zones_prob
 
 def count_iterable(i: Iterable):
     return sum(1 for e in i)
@@ -170,7 +189,7 @@ def plotPredictionTimeseries(predictions: np.array, cgm_df: pd.DataFrame, figure
         fig.add_trace(
             go.Scatter(
                 x=list(sectionDates),
-                y=list(predictions[sectionDates] / 18),
+                y=list(predictions[sectionDates]),
                 name='Prediction',
                 marker_color='rgba' + str(cm.Blues(300)),
                 legendgroup='prediction',
@@ -180,7 +199,7 @@ def plotPredictionTimeseries(predictions: np.array, cgm_df: pd.DataFrame, figure
         fig.add_trace(
             go.Scatter(
                 x=list(sectionDates),
-                y=list(predictions_delta[sectionDates] / 18),
+                y=list(predictions_delta[sectionDates]),
                 name='Prediction delta',
                 marker_color='rgba' + str(cm.Blues(300)),
                 legendgroup='prediction_delta',
@@ -190,7 +209,7 @@ def plotPredictionTimeseries(predictions: np.array, cgm_df: pd.DataFrame, figure
         fig.add_trace(
             go.Scatter(
                 x=list(sectionDates),
-                y=list(cgm_df['target'][sectionDates] / 18),
+                y=list(cgm_df['target'][sectionDates]),
                 name="True",
                 marker_color='rgba' + str(cm.Blues(100)),
                 legendgroup='target',
@@ -200,7 +219,7 @@ def plotPredictionTimeseries(predictions: np.array, cgm_df: pd.DataFrame, figure
         fig.add_trace(
             go.Scatter(
                 x=list(sectionDates),
-                y=list(cgm_df['target_delta'][sectionDates] / 18),
+                y=list(cgm_df['target_delta'][sectionDates]),
                 name="True delta",
                 marker_color='rgba' + str(cm.Blues(100)),
                 legendgroup='target_delta',
@@ -233,18 +252,18 @@ def plotPredictionTimeseries(predictions: np.array, cgm_df: pd.DataFrame, figure
         ),
         #title="Model: " + str(model_id) + ", Train: " + str(train_data) + ",<br> Test: " + test_data,
         xaxis_title="Time",
-        yaxis_title="Blood Glucose Measurement [Mmol/L]",
+        yaxis_title="Blood Glucose Measurement [mg/dl]",
         font=dict(
             family="Courier New, monospace",
             size=18,
             color="#7f7f7f"
         ),
-        yaxis=dict(range=[-5, 30]),
+        yaxis=dict(range=[0, 360]),
         )
     fig.add_trace(
         go.Scatter(
             x=[cgm_df.index.min(), cgm_df.index.max()],
-            y=[12, 12],
+            y=[170, 170],
             name="Upper range",
             marker_color='black',
             mode='lines',
@@ -255,7 +274,7 @@ def plotPredictionTimeseries(predictions: np.array, cgm_df: pd.DataFrame, figure
     fig.add_trace(
         go.Scatter(
             x=[cgm_df.index.min(), cgm_df.index.max()],
-            y=[4, 4],
+            y=[80, 80],
             name="Lower range",
             marker_color='black',
             mode='lines',

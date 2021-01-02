@@ -17,7 +17,7 @@ from torch.autograd import Variable
 from config import code_path, data_path
 from src.data import DataframeDataLoader
 from src.load_data import dataLoader
-from src.models.hediaNetExample import DilatedNet
+from src.models.best_model_2314 import DilatedNet
 from src.tools import train_cgm
 
 pass
@@ -35,6 +35,9 @@ pass
 
 # %%
 def test_rmse(model, data_obj=None, device="cpu"):
+    if torch.cuda.is_available():
+        device = torch.device(torch.cuda.current_device())
+        
     dset_test = data_obj.load_test_data()
 
     test_loader = DataframeDataLoader(
@@ -48,12 +51,14 @@ def test_rmse(model, data_obj=None, device="cpu"):
     with torch.no_grad():
         for data in test_loader:
             inputs, targets = data
-            inputs = Variable(inputs.permute(0, 2, 1)).contiguous()
-            inputs, targets = inputs.to(device), targets.to(device)
-
+            inputs = Variable(inputs.permute(0, 2, 1).cuda()).contiguous()
+            targets = Variable(targets.cuda())
+            
+            # inputs, targets = inputs.to(device), Variable(targets.cuda()).to(device)
+            
             outputs = model(inputs).squeeze()
             total += targets.size(0)
-            SSE += np.sum(np.power((outputs - targets).numpy(), 2))
+            SSE += np.sum(np.power((outputs - targets).cpu().numpy(), 2))
 
     return (np.sqrt(SSE/total))
 
@@ -65,11 +70,13 @@ def searchBestHypers(num_samples=10, max_num_epochs=15, n_epochs_stop=2, grace_p
     experiment_id = 'no_name_yet'
 
     config_schedule = {
-        "batch_size": tune.choice([4, 8, 16, 32]),
-        "lr": tune.loguniform(1e-4, 1e-1),
-        "h1": tune.sample_from(lambda: 2 ** np.random.randint(3, 8)),
-        "h2": tune.sample_from(lambda: 2 ** np.random.randint(3, 8)),
-        "wd": tune.loguniform(1e-4, 1e-1),
+        "batch_size": tune.choice([128]),
+        "h1": tune.sample_from(lambda: 2 ** np.random.randint(2, 7)),
+        "h2": tune.sample_from(lambda: 2 ** np.random.randint(2, 7)),
+        "dilations": tune.choice([[1,1,2,2,4]]),
+        "lr": tune.loguniform(0.0005, 0.008),
+        "wd": tune.loguniform(0.001, 0.09),
+        "activation": tune.choice(["ReLU"])
     }
 
     scheduler = ASHAScheduler(
@@ -79,18 +86,18 @@ def searchBestHypers(num_samples=10, max_num_epochs=15, n_epochs_stop=2, grace_p
         grace_period=1,
         reduction_factor=2)
 
-    pbt = PopulationBasedTraining(
-        time_attr="training_iteration",
-        metric="loss",
-        mode="min",
-        perturbation_interval=4,
-        hyperparam_mutations={
-            "batch_size": [4, 8, 16, 32, 64],
-            "lr": tune.loguniform(1e-4, 1e-1),
-            "h1": [8, 16, 32, 64, 128],
-            "h2": [8, 16, 32, 64, 128],
-            "wd": tune.loguniform(1e-4, 1e-1),
-        })
+    # pbt = PopulationBasedTraining(
+    #     time_attr="training_iteration",
+    #     metric="loss",
+    #     mode="min",
+    #     perturbation_interval=4,
+    #     hyperparam_mutations={
+    #         "batch_size": [16, 32, 64, 128],
+    #         "lr": tune.loguniform(1e-4, 1e-1),
+    #         "h1": [64, 128, 256],
+    #         "h2": [64, 128, 256],
+    #         "wd": tune.loguniform(1e-4, 1e-1),
+    #     })
 
     reporter = CLIReporter(
         metric_columns=["loss", "training_iteration"])
@@ -110,8 +117,7 @@ def searchBestHypers(num_samples=10, max_num_epochs=15, n_epochs_stop=2, grace_p
         best_trial.last_result["loss"]))
 
     # Build best network
-    best_trained_model = DilatedNet(h1=best_trial.config["h1"],
-                                    h2=best_trial.config["h2"])
+    best_trained_model = DilatedNet(h1=best_trial.config["h1"], h2=best_trial.config["h2"], dilations=best_trial.config["dilations"], activation=best_trial.config["activation"]) # h1=best_trial.config["h1"], h2=best_trial.config["h2"]
     device = "cpu"
     if torch.cuda.is_available():
         device = "cuda:0"
@@ -119,8 +125,11 @@ def searchBestHypers(num_samples=10, max_num_epochs=15, n_epochs_stop=2, grace_p
             best_trained_model = nn.DataParallel(best_trained_model)
     best_trained_model.to(device)
 
+    best_checkpoint = result.get_best_checkpoint(best_trial, metric="loss", mode="min")
+
     best_checkpoint_dir = best_trial.checkpoint.value
 
+    print("best_checkpoint: ", best_checkpoint)
     print("BEST MODEL DIR: ", best_checkpoint_dir)
     model_state, optimizer_state = torch.load(os.path.join(
         best_checkpoint_dir, "checkpoint"))

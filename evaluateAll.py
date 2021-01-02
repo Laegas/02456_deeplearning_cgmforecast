@@ -5,7 +5,6 @@ import json
 import os
 from pathlib import Path
 from shutil import copyfile
-
 import pandas as pd
 import torch
 from sklearn.preprocessing import StandardScaler
@@ -14,7 +13,7 @@ from config import code_path, data_path, figure_path, model_path, result_path
 from optimizeHypers import searchBestHypers
 from src.evaluation import evaluateModel
 from src.load_data import dataLoader
-from src.models.hediaNetExample import DilatedNet
+from src.models.best_model_2314 import DilatedNet
 from src.parameter_sets.evaluateAllPars import (GRACE_PERIOD, GRACE_PERIOD_FINAL, MAX_NUM_EPOCHS,
                                                 MAX_NUM_EPOCHS_FINAL, N_EPOCHS_STOP,
                                                 N_EPOCHS_STOP_FINAL, NUM_SAMPLES, dates, features,
@@ -22,12 +21,14 @@ from src.parameter_sets.evaluateAllPars import (GRACE_PERIOD, GRACE_PERIOD_FINAL
                                                 val_data_sequence)
 from src.tools import train_cgm
 
-scores = pd.DataFrame(columns=['RMSE', 'MARD', 'MAE',
-                               'A', 'B', 'C', 'D', 'E', 'precision', 'recall', 'F1'])
+scores = pd.DataFrame(columns=['model_id', 'RMSE', 'MARD', 'MAE',
+                               'A', 'B', 'C', 'D', 'E', 'A', 'B', 'C', 'D', 'E', 'precision', 'recall', 'F1', 'lag'])
 scores.index.name = '[training], test'
-
+start_time=datetime.datetime.now()
+print(f'====================================================================')
+print(f'\tSTART TIME [h:m:s:ms]: [{start_time}]')
+print(f'====================================================================')
 for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, val_data_sequence, test_data_sequence)):
-
     start_date_train = list(dates['start_date_train'][train_data])
     end_date_train = list(dates['end_date_train'][train_data])
     start_date_val = dates['start_date_val'][val_data]
@@ -59,7 +60,7 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
     data_pars['end_date_test'] = end_date_test
     data_pars['end_date_validation'] = end_date_test
 
-    data_obj_hyperOpt = dataLoader(data_pars, features, n_steps_past=16,
+    data_obj_hyperOpt = dataLoader(data_pars, features, n_steps_past=24,
                                    n_steps_future=6,
                                    allowed_gap=10,
                                    scaler=StandardScaler())
@@ -68,7 +69,7 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
                                      n_epochs_stop=N_EPOCHS_STOP,
                                      max_num_epochs=MAX_NUM_EPOCHS,
                                      grace_period=GRACE_PERIOD,
-                                     gpus_per_trial=0,
+                                     gpus_per_trial=1,
                                      data_obj=data_obj_hyperOpt)
     #experiment_id = main(num_samples=2, n_epochs_stop=3, max_num_epochs=2, gpus_per_trial=0, grace_period=1, data_obj=data_obj_hyperOpt)
 
@@ -92,10 +93,9 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
     with open(par_file) as json_file:
         optHyps = json.load(open(par_file))
 
-    model = DilatedNet(h1=optHyps["h1"],
-                       h2=optHyps["h2"])
+    model = DilatedNet(activation=optHyps["activation"], h1=optHyps["h1"], h2=optHyps["h2"], dilations=optHyps["dilations"]) # h1=optHyps["h1"], h2=optHyps["h2"]
 
-    data_obj = dataLoader(data_pars, features, n_steps_past=16,
+    data_obj = dataLoader(data_pars, features, n_steps_past=24,
                           n_steps_future=6,
                           allowed_gap=10,
                           scaler=StandardScaler())
@@ -110,6 +110,8 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
     # Load best model state
     model_state, optimizer_state = torch.load(code_path / 'src' / 'model_state_tmp' / 'checkpoint')
     model.load_state_dict(model_state)
+    if torch.cuda.is_available():
+      model.cuda()
 
     current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
     user = getpass.getuser()
@@ -134,6 +136,7 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
         'hypo': 1,
         'clarke': 1,
         'lag': 1,
+        'parkes': 1,
         'plotLag': 1,
         'plotTimeseries': 1
     }
@@ -151,18 +154,30 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
     if evaluationConfiguration['plotTimeseries']:
         evalObject.get_timeSeriesPlot(figure_path=model_figure_path)
     if evaluationConfiguration['clarke']:
-        clarkes, clarkes_prob = evalObject.clarkesErrorGrid(
+        clarkes, clarkes_prob = evalObject.apply_clarke_error_grid(
+            'mg/dl', figure_path=model_figure_path)
+    if evaluationConfiguration['parkes']:
+        parkes, parkes_prob = evalObject.apply_parkes_error_grid(
             'mg/dl', figure_path=model_figure_path)
 
-    scores.loc[str([train_data, test_data])] = [
-        distance['rmse'], distance['mard'], distance['mae'],
+    scores.loc[str([train_data, val_data, test_data])] = [
+        model_id, distance['rmse'], distance['mard'], distance['mae'],
         clarkes_prob['A'], clarkes_prob['B'], clarkes_prob['C'], clarkes_prob['D'], clarkes_prob['E'],
-        hypo['precision'], hypo['recall'], hypo['F1']
+        parkes_prob['A'], parkes_prob['B'], parkes_prob['C'], parkes_prob['D'], parkes_prob['E'],
+        hypo['precision'], hypo['recall'], hypo['F1'], lag
     ]
-
+    
     # Save results
     result_path.mkdir(exist_ok=True, parents=True)
-    scores.to_csv(result_path / 'all_scores.csv')
+    scores.to_csv(result_path / f'all_scores_{start_time}.csv')
     copyfile(par_file, model_figure_path / "optPars.json")
     copyfile(code_path / 'hyper_experiments' / (experiment_id +
                                                 '.json'), model_figure_path / "data_properties.json")
+    execution_time = datetime.datetime.now() - start_time
+    print(f'=============Execution time of loop {i} [h:m:s:ms]: [{execution_time}]=============')
+execution_time = datetime.datetime.now() - start_time
+print('\n\n')
+print(f'=========================SCRIPT FINISHED============================')
+print(f'\tTotal execution time [h:m:s:ms]: [{execution_time}]')
+print(f'====================================================================')
+print(f'Result in all_scores_{start_time}.csv')

@@ -110,16 +110,19 @@ def clarke_error_grid(ref_values, pred_values, title_string, unit):
 
     plt.ioff()
 
+    # fontsize
+    fontsize = 20
+
     #Set up plot
     plt.figure(num=None, figsize=(16, 12), dpi=80, facecolor='w', edgecolor='k')
     plt.scatter(np.array(ref_values), np.array(pred_values), marker='o', color='black', s=8,alpha=0.2)
-    plt.title("Clarke Error Grid - Model: " + title_string)
-    plt.xlabel("Reference Concentration (" + unit + ")")
-    plt.ylabel("Prediction Concentration (" + unit + ")")
+    plt.title("Clarke Error Grid - Model: " + title_string, fontsize=fontsize)
+    plt.xlabel("Reference Concentration (" + unit + ")", fontsize=fontsize)
+    plt.ylabel("Prediction Concentration (" + unit + ")", fontsize=fontsize)
     ticks = np.arange(0,int(400/div) + int(np.floor(50/div)),int(np.floor(50/div)))
     labels = [str(ticks[i]) for i in range(len(ticks))]
-    plt.xticks(np.array(ticks) * div, labels = labels)
-    plt.yticks(np.array(ticks) * div, labels = labels)
+    plt.xticks(np.array(ticks) * div, labels = labels, fontsize=fontsize)
+    plt.yticks(np.array(ticks) * div, labels = labels, fontsize=fontsize)
     plt.gca().set_facecolor('white')
 
     #Set axes lengths
@@ -149,15 +152,15 @@ def clarke_error_grid(ref_values, pred_values, title_string, unit):
     
     
     #Add zone titles
-    plt.text(30, 15, "A", fontsize=15)
-    plt.text(370, 260, "B", fontsize=15)
-    plt.text(280, 370, "B", fontsize=15)
-    plt.text(160, 370, "C", fontsize=15)
-    plt.text(160, 15, "C", fontsize=15)
-    plt.text(30, 140, "D", fontsize=15)
-    plt.text(370, 120, "D", fontsize=15)
-    plt.text(30, 370, "E", fontsize=15)
-    plt.text(370, 15, "E", fontsize=15)
+    plt.text(30, 15, "A", fontsize=fontsize)
+    plt.text(370, 260, "B", fontsize=fontsize)
+    plt.text(280, 370, "B", fontsize=fontsize)
+    plt.text(160, 370, "C", fontsize=fontsize)
+    plt.text(160, 15, "C", fontsize=fontsize)
+    plt.text(30, 140, "D", fontsize=fontsize)
+    plt.text(370, 120, "D", fontsize=fontsize)
+    plt.text(30, 370, "E", fontsize=fontsize)
+    plt.text(370, 15, "E", fontsize=fontsize)
 
     
     #Statistics from the data

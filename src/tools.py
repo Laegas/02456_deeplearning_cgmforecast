@@ -12,7 +12,7 @@ from ray import tune
 from torch.autograd import Variable
 
 from src.data import DataframeDataLoader
-from src.models.hediaNetExample import DilatedNet
+from src.models.best_model_2314 import DilatedNet
 
 
 #%%
@@ -31,9 +31,10 @@ def predict_cgm(data_obj, model: nn.Module) -> np.ndarray:
     #loss = 0
     with torch.no_grad():
         for (data, target) in test_loader:
-            data = Variable(data.permute(0, 2, 1)).contiguous()
-            target = Variable(target.unsqueeze_(1))
-            output = model(data)
+            data = Variable(data.permute(0, 2, 1).cuda()).contiguous()
+            target = Variable(target.unsqueeze_(1).cuda())
+            
+            output = model(data).cpu()
             
             outputs.append(output)
 
@@ -48,8 +49,24 @@ def train_cgm(config: dict, data_obj=None, max_epochs=10, n_epochs_stop=5, grace
 
     '''
     # Build network
-    model = DilatedNet(h1=config["h1"], 
-                       h2=config["h2"])
+    model = DilatedNet(activation=config["activation"], h1=config["h1"], h2=config["h2"], dilations=config["dilations"]) # h1=config["h1"], h2=config["h2"]
+
+    # Print model parameters by layer
+    from prettytable import PrettyTable
+
+    def count_parameters(model):
+        table = PrettyTable(["Modules", "Parameters"])
+        total_params = 0
+        for name, parameter in model.named_parameters():
+            if not parameter.requires_grad: continue
+            param = parameter.numel()
+            table.add_row([name, param])
+            total_params+=param
+        print(table)
+        print(f"Total Trainable Params: {total_params}")
+        return total_params
+        
+    count_parameters(model)
 
     # Move model between cpu and gpu
     device = "cpu"
@@ -59,12 +76,10 @@ def train_cgm(config: dict, data_obj=None, max_epochs=10, n_epochs_stop=5, grace
             model = nn.DataParallel(model)
     model.to(device)
 
-
     # Optimizser and loss criterion
     #criterion = nn.SmoothL1Loss(reduction='sum')
     criterion = nn.MSELoss(reduction='sum')
-    optimizer = optim.RMSprop(model.parameters(), lr=config['lr'], weight_decay=config['wd'])  # n
-
+    optimizer = optim.Adam(model.parameters(), lr=config['lr'], weight_decay=config['wd'])
 
     if checkpoint_dir:
         model_state, optimizer_state = torch.load(

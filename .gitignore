@@ -170,3 +170,6 @@ src/parameter_sets/evaluateAllPars.py
 
 # Result directory
 results/
+
+# Local folder for data and other stuff
+config/
