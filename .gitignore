@@ -136,9 +136,6 @@ dmypy.json
 # IDEA editor configuration
 .idea/
 
-# Local configuration
-config.py
-
 # Figure folder
 figs/
 
@@ -163,10 +160,6 @@ src/model_state_tmp/
 
 # Experiments
 hyper_experiments/
-
-# Parameters
-src/parameter_sets/par.py
-src/parameter_sets/evaluateAllPars.py
 
 # Result directory
 results/
