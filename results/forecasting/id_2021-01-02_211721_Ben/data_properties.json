@@ -1,0 +1,10 @@
+{
+    "name": "no_name_yet",
+    "best_trial_dir": "C:\\Users\\Ben\\ray_results\\DEFAULT\\DEFAULT_7fc3b_00000_0_activation=ReLU,batch_size=128,dilations=[1, 1, 2, 2, 4],h1=8,h2=8,lr=0.0045692,wd=0.003131_2021-01-02_21-17-12\\checkpoint_0\\",
+    "train_data": "['570-ws-training']",
+    "test_data": "570-ws-training",
+    "start_date_train": "['2021-12-07 16:29:00']",
+    "start_date_test": "2022-01-13 07:58:00",
+    "end_date_train": "['2022-01-08 20:18:00']",
+    "end_date_test": "2022-01-16 23:59:00"
+}

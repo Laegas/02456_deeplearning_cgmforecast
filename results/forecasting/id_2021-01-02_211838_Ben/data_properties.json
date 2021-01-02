@@ -1,0 +1,10 @@
+{
+    "name": "no_name_yet",
+    "best_trial_dir": "C:\\Users\\Ben\\ray_results\\DEFAULT\\DEFAULT_ad689_00000_0_activation=ReLU,batch_size=128,dilations=[1, 1, 2, 2, 4],h1=4,h2=32,lr=0.0025806,wd=0.0071045_2021-01-02_21-18-29\\checkpoint_0\\",
+    "train_data": "['588-ws-training']",
+    "test_data": "588-ws-training",
+    "start_date_train": "['2021-08-30 11:53:00']",
+    "start_date_test": "2021-10-10 11:05:00",
+    "end_date_train": "['2021-10-05 21:26:00']",
+    "end_date_test": "2021-10-14 23:55:00"
+}

@@ -1,0 +1,10 @@
+{
+    "name": "no_name_yet",
+    "best_trial_dir": "C:\\Users\\Ben\\ray_results\\DEFAULT\\DEFAULT_a2eac_00000_0_activation=ReLU,batch_size=128,dilations=[1, 1, 2, 2, 4],h1=8,h2=64,lr=0.0069505,wd=0.0054774_2021-01-02_21-18-11\\checkpoint_0\\",
+    "train_data": "['591-ws-training']",
+    "test_data": "591-ws-training",
+    "start_date_train": "['2021-11-30 17:06:00']",
+    "start_date_test": "2022-01-10 00:13:00",
+    "end_date_train": "['2022-01-05 22:36:00']",
+    "end_date_test": "2022-01-13 23:58:00"
+}
