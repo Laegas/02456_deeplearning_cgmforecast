@@ -4,17 +4,17 @@ features = ['CGM', 'CHO', 'insulin', 'CGM_delta']
 
 # Define search parameters
 # ----------------------------------------
-NUM_SAMPLES = 40 # 40  # Number of different hyper parameter setting
-MAX_NUM_EPOCHS = 50 # 50  # Maximum number of epochs in training
-N_EPOCHS_STOP = 15 # 15  # Number of consecuetive epochs with no improvement in validation data before terminating training
-GRACE_PERIOD = 5 # 5  # Minimum number of epochs before termination is allowed
+NUM_SAMPLES = 2 # 40  # Number of different hyper parameter setting
+MAX_NUM_EPOCHS = 2 # 50  # Maximum number of epochs in training
+N_EPOCHS_STOP = 5 # 15  # Number of consecuetive epochs with no improvement in validation data before terminating training
+GRACE_PERIOD = 3 # 5  # Minimum number of epochs before termination is allowed
 # ----------------------------------------
 
 # Define final train parameters
 # ----------------------------------------
 MAX_NUM_EPOCHS_FINAL = 100 # 50
-N_EPOCHS_STOP_FINAL = 30 # 15
-GRACE_PERIOD_FINAL = 10 # 5
+N_EPOCHS_STOP_FINAL = 10 # 15
+GRACE_PERIOD_FINAL = 5 # 5
 # ----------------------------------------
 
 # Define dates

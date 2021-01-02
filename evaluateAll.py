@@ -168,8 +168,9 @@ for i, (train_data, val_data, test_data) in enumerate(zip(train_data_sequence, v
     ]
     
     # Save results
+    timestamp1=start_time.strftime('%d%m%y_%H%M%S')
     result_path.mkdir(exist_ok=True, parents=True)
-    scores.to_csv(result_path / f'all_scores_{start_time}.csv')
+    scores.to_csv(result_path / f'all_scores_{timestamp1}.csv')
     copyfile(par_file, model_figure_path / "optPars.json")
     copyfile(code_path / 'hyper_experiments' / (experiment_id +
                                                 '.json'), model_figure_path / "data_properties.json")
@@ -180,4 +181,4 @@ print('\n\n')
 print(f'=========================SCRIPT FINISHED============================')
 print(f'\tTotal execution time [h:m:s:ms]: [{execution_time}]')
 print(f'====================================================================')
-print(f'Result in all_scores_{start_time}.csv')
+print(f'Result in all_scores_{timestamp1}.csv')
