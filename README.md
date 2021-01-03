@@ -5,7 +5,7 @@
 3. Put the data it `config/ohio` directory.
 4. Run the "Hedia.ipynb" Jupyter notebook.
 
-The current code version utilizes the GPU usage. If you do not have the GPU, go to `evaluateAll.py` and in line 72 change the value assigned to `gpus_per_trial` from 1 to 0.
+The current code version utilizes the GPU usage which is required to run the code.
 
 # Notes
 
