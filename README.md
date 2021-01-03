@@ -6,3 +6,7 @@
 4. Run the "Hedia.ipynb" Jupyter notebook.
 
 The current code version utilizes the GPU usage. If you do not have the GPU, go to `evaluateAll.py` and in line 72 change the value assigned to `gpus_per_trial` from 1 to 0.
+
+# Notes
+
+The model can be found in `src/models` directory. The file `best_model_2314.py` is the one containing the model talked about in the paper.
